@@ -1,1 +1,1 @@
-console.log.('test);
+print("testing!");
