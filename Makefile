@@ -13,7 +13,7 @@ bin/testing: src/main.cpp
 	$(CXX) $(CXXFLAGS) src/main.cpp -o bin/testing $(LDFLAGS)
 
 # Helper Target running
-run:
+run: all
 	./bin/testing test.js
 
 
