@@ -24,7 +24,7 @@ ln -s /path/to/your/spidermonkey/build_directory ./spidermonkey
 ```
 
 ### 3. Build & Run
-You can easily compile and run the runtime using the provided `Makefile` or `build.sh`
+You can easily compile and run the runtime using the provided `Makefile`
 
 * **To compile:**
   ```bash
