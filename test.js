@@ -1,1 +1,1 @@
-print('elu karbitan');
+console.log.('test);
