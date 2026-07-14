@@ -12,7 +12,7 @@ Before building, you need a compiled standalone version of the SpiderMonkey libr
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/Ali-syr/Testing-runtime.git](https://github.com/Ali-syr/Testing-runtime.git)
+git clone https://github.com/Ali-syr/Testing-runtime.git
 cd testing-runtime
 ```
 
