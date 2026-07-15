@@ -20,37 +20,75 @@ std::string readFile(const std::string& filePath) {
     return buffer.str();
 }
 
-// --- NEW: C++ Implementation of the JavaScript print() function ---
+// C++ Implementation of the JavaScript print() function
 bool js_print(JSContext* cx, unsigned argc, JS::Value* vp) {
     JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
     
-    // Loop through all arguments passed to print(a, b, c, ...)
+    // Allocate RootedString once outside the loop to prevent repetitive GC rooting registration
+    JS::RootedString str(cx);
+
     for (unsigned i = 0; i < args.length(); i++) {
-        JS::RootedString str(cx, JS::ToString(cx, args[i]));
+        // Safely set value inside the existing rooted container
+        str.set(JS::ToString(cx, args[i]));
         if (!str) {
             return false;
         }
         
-        // Convert SpiderMonkey string to standard C++ string
+        // Encode the SpiderMonkey string layout to a standard UTF-8 C-string
         JS::UniqueChars chars = JS_EncodeStringToUTF8(cx, str);
         if (!chars) {
             return false;
         }
         
+        // Print the string and handle spacing between multiple arguments
         std::cout << chars.get() << (i == args.length() - 1 ? "" : " ");
-    }
+    } // End of for loop
+
+    std::cout << std::endl;      // Append newline at the end
+    args.rval().setUndefined();  // Return undefined back to JS
+    return true;
+}
+
+// C++ Implementation of the JavaScript readFile() function
+bool js_readFile(JSContext* cx, unsigned argc, JS::Value* vp) {
+    JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
     
-    std::cout << std::endl; // Append newline at the end
-    args.rval().setUndefined(); // Return undefined back to JS
+    // 1. Argument validation: Must provide at least 1 argument and it must be a string
+    if (args.length() < 1 || !args[0].isString()) {
+        JS_ReportErrorASCII(cx, "readFile() requires at least one string argument (filePath).");
+        return false;
+    }
+
+    // 2. Convert the JavaScript string into a standard C++ string
+    JS::RootedString str(cx, args[0].toString());
+    JS::UniqueChars filePath = JS_EncodeStringToUTF8(cx, str);
+    if (!filePath) {
+        return false;
+    }
+
+    // 3. Read the file using the existing helper function
+    std::string content = readFile(filePath.get());
+    if (content.empty()) {
+        args.rval().setNull(); // Return null if the file is empty or not found
+        return true;
+    }
+
+    // 4. Convert the C++ string back into a JavaScript string
+    JS::RootedString jsContent(cx, JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(content.c_str(), content.length())));
+    if (!jsContent) {
+        return false;
+    }
+
+    args.rval().setString(jsContent); // Return the string back to the JS side
     return true;
 }
 
 // Define the native functions to be linked into the Global Object
 static const JSFunctionSpec global_functions[] = {
     JS_FN("print", js_print, 1, 0),
-    JS_FS_END
+    JS_FN("readFile", js_readFile, 1, 0), // Add the new readFile function to the global scope
+    JS_FS_END 
 };
-// ------------------------------------------------------------------
 
 int main(int argc, char* argv[]) {
     // Validate command-line arguments
@@ -113,14 +151,21 @@ int main(int argc, char* argv[]) {
         // Enter the Realm/execution context of the newly created global object
         JSAutoRealm arRealm(cx, global);
 
-        // --- NEW: Inject the native C++ print function into the JS global scope ---
+        // Inject the native C++ functions into the JS global scope
         if (!JS_DefineFunctions(cx, global, global_functions)) {
             std::cerr << "Error: Failed to define global functions!" << std::endl;
             JS_DestroyContext(cx);
             JS_ShutDown();
             return 1;
         }
-        // -------------------------------------------------------------------------
+
+        // Explicitly inject the 'globalThis' property pointing to the global object itself
+        if (!JS_DefineProperty(cx, global, "globalThis", global, JSPROP_READONLY | JSPROP_PERMANENT)) {
+            std::cerr << "Error: Failed to define globalThis!" << std::endl;
+            JS_DestroyContext(cx);
+            JS_ShutDown();
+            return 1;
+        }
 
         // Set compilation options (stores filename for stack traces and error reporting)
         JS::CompileOptions compileOptions(cx);
