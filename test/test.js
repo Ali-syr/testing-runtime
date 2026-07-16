@@ -1,1 +1,1 @@
-print('lu karbitan');
+print('example');
