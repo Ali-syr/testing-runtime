@@ -1,6 +1,6 @@
 # JavaScript Runtime
 
-An experimental, JavaScript runtime built on Mozilla SpiderMonkey engine in C++. This project serves as a playground for understanding native C++ bindings, global execution contexts, and custom runtime environments.
+JavaScript runtime built on Mozilla SpiderMonkey engine in C++. This project serves as a playground for understanding native C++ bindings, global execution contexts, and custom runtime environments.
 
 TL:DR just side project
 
