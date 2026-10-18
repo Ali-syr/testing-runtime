@@ -1,1 +1,1 @@
-print('lu karbitan');
+console.log("testing")
